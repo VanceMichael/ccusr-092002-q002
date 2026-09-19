@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "domain": "产业考察合作线索归口",
+  "required_fields": [
+    "visit_ref",
+    "enterprise_ref",
+    "park_ref",
+    "policy_revision",
+    "consent_ref"
+  ],
+  "time_format": "ISO 8601 with offset",
+  "sample": {
+    "visit_ref": "VISIT-DEMO",
+    "enterprise_ref": "ORG-DEMO",
+    "park_ref": "PARK-A"
+  }
+}
