@@ -1,17 +1,123 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "产业考察合作线索归口",
-  "required_fields": [
-    "visit_ref",
-    "enterprise_ref",
-    "park_ref",
-    "policy_revision",
-    "consent_ref"
-  ],
   "time_format": "ISO 8601 with offset",
+  "identity": {
+    "operator_header": "X-Operator-ID",
+    "operator_rule": "经办人归属唯一园区，只能读写本园区持有的意向；跨园须发起转交并由接收园区凭 receipt_no 回执",
+    "scope_rule": "按 intents.current_park_ref 与 operators.park_ref 比对"
+  },
+  "entities": {
+    "park": {
+      "key": "park_ref",
+      "fields": ["park_ref", "name", "created_at"]
+    },
+    "operator": {
+      "key": "operator_id",
+      "fields": ["operator_id", "park_ref", "name", "active", "created_at"]
+    },
+    "enterprise": {
+      "key": "enterprise_ref",
+      "fields": ["enterprise_ref", "name", "created_at"]
+    },
+    "visit": {
+      "key": ["enterprise_ref", "visit_ref"],
+      "fields": ["enterprise_ref", "visit_ref", "park_ref", "occurred_at", "note"]
+    },
+    "intent": {
+      "key": "intent_id",
+      "dedupe_key": ["enterprise_ref", "visit_ref"],
+      "fields": [
+        "intent_id", "enterprise_ref", "visit_ref", "current_park_ref",
+        "status", "title", "conditions", "consent_ref",
+        "confirmed_policy_version", "has_conflicts", "published_at"
+      ],
+      "statuses": ["DRAFT", "POLICY_CONFIRMED", "SIGNED", "CLOSED"]
+    },
+    "source_record": {
+      "source_values": ["enterprise", "youth", "district"],
+      "key": ["source", "source_record_ref"],
+      "fields": ["intent_id", "source", "source_record_ref", "submitter_ref", "park_ref", "payload", "conflicts", "received_at"],
+      "conflict_fields": ["title", "conditions", "park_ref"],
+      "note": "同一 (enterprise_ref, visit_ref) 的多条来源记录归口到同一 intent；冲突字段进入 conflicts 并置 has_conflicts，等待人工研判"
+    },
+    "authorization": {
+      "key": ["enterprise_ref", "consent_ref"],
+      "fields": ["consent_ref", "scope", "effective_at", "contacts"],
+      "rule": "合作范围调整即产生新 consent_ref 版本；意向 published_at 非空后禁止调整"
+    },
+    "contact": {
+      "fields": ["name", "role_tag", "channel", "public_consent"],
+      "rule": "public_consent=false 的联系人不会出现在 /v1/public/intents"
+    },
+    "policy_revision": {
+      "key": "version",
+      "fields": ["version", "title", "detail", "effective_at"]
+    },
+    "policy_confirmation": {
+      "key": ["intent_id", "version"],
+      "fields": ["intent_id", "version", "consent_ref", "operator_id", "confirmed_at"],
+      "rule": "签约前若当前生效版本 != confirmed_policy_version，拒绝签约/公开，要求重新确认"
+    },
+    "transfer": {
+      "key": "transfer_id",
+      "receipt": "receipt_no",
+      "fields": ["receipt_no", "intent_id", "from_park_ref", "to_park_ref", "operator_id", "status", "acknowledged_at", "ack_operator_id", "reject_reason"],
+      "statuses": ["PENDING", "ACCEPTED", "REJECTED"],
+      "rule": "PENDING 期间归属不变；ACCEPTED 后 current_park_ref 转为接收园区"
+    },
+    "park_feedback": {
+      "fields": ["intent_id", "park_ref", "operator_id", "content", "created_at"]
+    },
+    "engagement": {
+      "key": "engagement_id",
+      "fields": ["intent_id", "park_ref", "operator_id", "occurred_at", "location", "summary"]
+    },
+    "dispute": {
+      "key": "dispute_id",
+      "fields": ["intent_id", "engagement_id", "raised_by", "issue", "status", "resolution", "resolver_operator_id", "resolved_at"],
+      "statuses": ["OPEN", "RESOLVED"]
+    },
+    "intent_event": {
+      "fields": ["event_id", "intent_id", "event_type", "operator_id", "from_status", "to_status", "detail", "created_at"],
+      "types": [
+        "INTENT_CREATED", "SOURCE_RECORDED", "CONFLICTS_REVIEWED",
+        "CONDITIONS_UPDATED", "CONSENT_ATTACHED", "SCOPE_ADJUSTED",
+        "POLICY_CONFIRMED", "STATUS_CHANGED", "PUBLISHED",
+        "TRANSFER_REQUESTED", "TRANSFER_ACCEPTED", "TRANSFER_REJECTED",
+        "FEEDBACK_ADDED", "ENGAGEMENT", "DISPUTE_OPENED", "DISPUTE_RESOLVED"
+      ]
+    }
+  },
+  "endpoints": {
+    "POST /v1/sources/{enterprise|youth|district}": "提交来源线索，自动归口/冲突检测",
+    "GET /v1/intents": "列出本园区意向（?status=）",
+    "GET /v1/intents/{id}": "意向及其全部来源记录",
+    "PUT /v1/intents/{id}/conditions": "维护归口项目条件（公开前）",
+    "POST /v1/intents/{id}/conflicts/resolve": "冲突人工研判",
+    "POST /v1/intents/{id}/feedback": "园区反馈",
+    "POST /v1/authorizations": "提交企业授权版本与联系人公开意愿",
+    "PUT /v1/intents/{id}/consent": "挂载授权版本",
+    "POST /v1/intents/{id}/scope-adjustments": "未公开前调整合作范围（新版本授权）",
+    "POST /v1/intents/{id}/policy-confirmations": "按当前政策版本确认",
+    "GET /v1/intents/{id}/readiness": "签约门槛检查",
+    "POST /v1/intents/{id}/sign": "签约（政策版本变化须先重新确认）",
+    "POST /v1/intents/{id}/publish": "对外公开（此后范围锁定）",
+    "POST /v1/intents/{id}/transfers": "发起跨园转交，返回 receipt_no",
+    "GET /v1/transfers?view=inbox": "接收园区待办",
+    "GET /v1/transfers/{receipt_no}": "查询回执（仅涉事园区）",
+    "POST /v1/transfers/{receipt_no}/acknowledge": "接收/拒收并留痕",
+    "POST /v1/intents/{id}/engagements": "登记实地对接",
+    "POST /v1/intents/{id}/disputes": "登记分歧",
+    "POST /v1/disputes/{id}/resolve": "记录分歧处理结论",
+    "GET /v1/intents/{id}/timeline": "状态→来源→确认→转交→反馈→实地对接→分歧→事件链",
+    "GET /v1/public/intents": "对外合作清单（无需鉴权；仅公开意向 + public_consent 联系人）"
+  },
   "sample": {
     "visit_ref": "VISIT-DEMO",
     "enterprise_ref": "ORG-DEMO",
-    "park_ref": "PARK-A"
+    "park_ref": "PARK-A",
+    "consent_ref": "CONSENT-DEMO-1",
+    "policy_revision": "POL-V1"
   }
 }

@@ -1,5 +1,31 @@
 {
-  "visit_ref": "VISIT-DEMO",
+  "source": "enterprise",
+  "source_record_ref": "SRC-DEMO-0001",
+  "submitter_ref": "OP-DEMO-A",
   "enterprise_ref": "ORG-DEMO",
-  "park_ref": "PARK-A"
+  "visit_ref": "VISIT-DEMO",
+  "occurred_at": "2026-09-19T09:30:00+08:00",
+  "payload": {
+    "enterprise_name": "示例台企（虚构）",
+    "title": "精密组件制造落地",
+    "park_ref": "PARK-A",
+    "visit_note": "交流周后回访，查看厂房与配套",
+    "conditions": {
+      "land_area_mu": 50,
+      "lease_years": 10,
+      "expected_subsidy": "按政策版本确认"
+    }
+  },
+  "authorization": {
+    "consent_ref": "CONSENT-DEMO-1",
+    "scope": {
+      "sectors": ["精密制造"],
+      "regions": ["PARK-A"]
+    },
+    "contacts": [
+      { "name": "示例联系人甲（虚构）", "role_tag": "投资负责人", "channel": "demo-a@example.invalid", "public_consent": true },
+      { "name": "示例联系人乙（虚构）", "role_tag": "随行助理", "channel": "demo-b@example.invalid", "public_consent": false }
+    ]
+  },
+  "confirmed_policy_version": "POL-V1"
 }
