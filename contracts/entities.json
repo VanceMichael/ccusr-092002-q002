@@ -1,5 +1,5 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "产业考察合作线索归口",
   "required_fields": [
     "visit_ref",
@@ -9,6 +9,23 @@
     "consent_ref"
   ],
   "time_format": "ISO 8601 with offset",
+  "entities": {
+    "visit": "参访行程，同一企业多条来源记录的锚点（visit_ref 主键）",
+    "intent": "归口后的合作意向，状态机 draft → published → signed，closed 为终止",
+    "source_record": "每次来源提交（推介会、园区记录、区县招商等）的原始留痕",
+    "dispute": "多来源字段冲突形成的分歧，签约前须处理完毕",
+    "feedback": "所属园区经办人对意向的反馈",
+    "contact": "意向联系人；consent_granted 须由企业方凭 consent_ref 授予",
+    "transfer": "跨区转交，接收方确认后留下 receipt 回执并变更归属园区",
+    "policy": "园区优惠政策版本（park_ref + revision 主键）",
+    "event": "事件流：状态变更、实地对接、分歧处理、转交回执等全程留痕"
+  },
+  "identity_headers": {
+    "X-Actor-Kind": "handler（经办人）或 enterprise（企业方）",
+    "X-Actor-Id": "经办人编号",
+    "X-Actor-Park": "经办人所属园区",
+    "X-Actor-Enterprise": "企业编号"
+  },
   "sample": {
     "visit_ref": "VISIT-DEMO",
     "enterprise_ref": "ORG-DEMO",

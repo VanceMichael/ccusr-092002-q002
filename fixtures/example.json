@@ -1,5 +1,16 @@
 {
   "visit_ref": "VISIT-DEMO",
   "enterprise_ref": "ORG-DEMO",
-  "park_ref": "PARK-A"
+  "park_ref": "PARK-A",
+  "visited_at": "2026-09-12T09:30:00+08:00",
+  "source": "推介会",
+  "submitted_by": "提交方示例",
+  "title": "精密零部件项目",
+  "scope": "一期厂房",
+  "conditions": {
+    "investment": "5000万",
+    "land_mu": "30"
+  },
+  "policy_revision": "2026-R1",
+  "consent_ref": "CONSENT-DEMO"
 }

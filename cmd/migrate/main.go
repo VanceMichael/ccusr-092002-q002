@@ -1,21 +1,16 @@
+// migrate 对 DATABASE_PATH 指定的数据文件应用全部迁移脚本。
 package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/vancemichael/092002-industrial-visit-intent/internal/httpapi"
 	"github.com/vancemichael/092002-industrial-visit-intent/internal/leads"
 	"github.com/vancemichael/092002-industrial-visit-intent/internal/sqlitedb"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
 		dbPath = "data/app.sqlite3"
@@ -33,7 +28,5 @@ func main() {
 	if err := leads.Migrate(db); err != nil {
 		log.Fatalf("应用迁移失败: %v", err)
 	}
-	svc := leads.NewService(db, nil)
-	log.Printf("合作线索归口服务监听 :%s，数据文件 %s", port, dbPath)
-	log.Fatal(http.ListenAndServe(":"+port, httpapi.Router(svc)))
+	log.Printf("迁移完成: %s", dbPath)
 }
